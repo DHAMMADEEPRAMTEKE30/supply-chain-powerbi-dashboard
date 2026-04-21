@@ -179,17 +179,23 @@ All DAX measures were stored in a dedicated **`_Measures`** table — an industr
 
 ### 🧮 Core Business Metrics
 
+Total revenue value across all orders placed
 ```dax
--- Total revenue value across all orders placed
 Total Order Value = SUM(Orders[Total_Order_Value_INR])
+```
 
--- Total logistics and shipping spend
+Total logistics and shipping spend
+```dax
 Total Freight Cost = SUM(Shipments[Freight_Cost_INR])
+```
 
--- Total number of orders in the system
+Total number of orders in the system
+```dax
 Total Orders = COUNTROWS(Orders)
+```
 
--- Total monetary value of stock held across all warehouses
+Total monetary value of stock held across all warehouses
+```dax
 Total Stock Value = SUM(Inventory[Stock_Value_INR])
 ```
 
