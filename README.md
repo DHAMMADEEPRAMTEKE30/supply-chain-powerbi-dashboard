@@ -420,8 +420,8 @@ Based on the insights from the dashboard:
 
 ```
 📦 supply-chain-powerbi-dashboard/
- ┣ 📊 Dashboard.pbix
- ┣ 📂 Dataset.xlsx
+ ┣ 📊 NovaMart_SupplyChain_Dashboard.pbix
+ ┣ 📂 NovaMart_SupplyChain_Dataset.xlsx
  ┣ 📄 README.md
  ┗ 📁 images/
     ┣ 🖼️ executive-overview.png
