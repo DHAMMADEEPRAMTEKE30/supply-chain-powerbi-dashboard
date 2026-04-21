@@ -170,49 +170,109 @@ All DAX measures were stored in a dedicated **`_Measures`** table — an industr
 
 ## 📐 DAX Measures
 
-10 custom DAX measures were written to calculate all KPIs used in the dashboard:
+10 custom DAX measures were written inside a dedicated **`_Measures`** table to calculate all KPIs across the dashboard. Each measure was built to reflect real business logic — not just simple aggregations.
+
+> 💡 **Why a separate `_Measures` table?**  
+> Storing all measures in one place keeps the data model clean and easy to maintain. The underscore prefix `_Measures` makes it sort to the top of the fields list — a standard convention used in professional Power BI development.
+
+---
+
+### 🧮 Core Business Metrics
 
 ```dax
--- Total business value of all orders
+-- Total revenue value across all orders placed
 Total Order Value = SUM(Orders[Total_Order_Value_INR])
 
--- Total shipment and logistics cost
+-- Total logistics and shipping spend
 Total Freight Cost = SUM(Shipments[Freight_Cost_INR])
 
--- Total number of orders placed
+-- Total number of orders in the system
 Total Orders = COUNTROWS(Orders)
 
--- % of shipments delivered on or before expected date
+-- Total monetary value of stock held across all warehouses
+Total Stock Value = SUM(Inventory[Stock_Value_INR])
+```
+
+---
+
+### 🚚 Delivery Performance Metrics
+
+```dax
+-- % of shipments that arrived on or before the expected delivery date
+-- Uses VAR variables for cleaner, more readable logic
 On-Time Delivery Rate % =
 VAR OnTimeCount = CALCULATE(COUNTROWS(Shipments), Shipments[On_Time_Delivery] = "YES")
 VAR TotalShipments = COUNTROWS(Shipments)
 RETURN DIVIDE(OnTimeCount, TotalShipments, 0) * 100
 
--- Average delay only for shipments that were actually delayed
+-- Average delay only for shipments that were actually late
+-- Excludes on-time shipments (Delay_Days = 0) to avoid diluting the true delay figure
 Average Delay Days =
-CALCULATE(AVERAGE(Shipments[Delay_Days]), Shipments[Delay_Days] > 0)
+CALCULATE(
+    AVERAGE(Shipments[Delay_Days]),
+    Shipments[Delay_Days] > 0
+)
 
--- % of orders that reached the customer
+-- True end-to-end lead time = transit time + any delay on top
+-- AVERAGEX iterates row by row before averaging — more accurate than a simple AVERAGE
+Average Lead Time Days =
+AVERAGEX(
+    Shipments,
+    Shipments[Transit_Days] + Shipments[Delay_Days]
+)
+```
+
+---
+
+### 📦 Order & Inventory Metrics
+
+```dax
+-- % of total orders that were successfully delivered to the customer
+-- Uses VAR pattern for readability and easier debugging
 Order Fulfillment Rate % =
 VAR DeliveredOrders = CALCULATE(COUNTROWS(Orders), Orders[Order_Status] = "Delivered")
 VAR TotalOrders = COUNTROWS(Orders)
 RETURN DIVIDE(DeliveredOrders, TotalOrders, 0) * 100
 
--- True end-to-end lead time per shipment
-Average Lead Time Days =
-AVERAGEX(Shipments, Shipments[Transit_Days] + Shipments[Delay_Days])
-
--- Defect rate for active suppliers only
-Supplier Defect Rate % =
-CALCULATE(AVERAGE(Suppliers[Defect_Rate_Pct]), Suppliers[Status] = "Active")
-
--- Total monetary value of all warehouse stock
-Total Stock Value = SUM(Inventory[Stock_Value_INR])
-
--- Count of product-warehouse combos at low stock level
+-- Count of product-warehouse combinations currently flagged as Low Stock
+-- Useful for triggering reorder alerts
 Low Stock Items Count =
-CALCULATE(COUNTROWS(Inventory), Inventory[Stock_Status] = "Low Stock")
+CALCULATE(
+    COUNTROWS(Inventory),
+    Inventory[Stock_Status] = "Low Stock"
+)
 ```
+
+---
+
+### 🏭 Supplier Metrics
+
+```dax
+-- Average defect rate across active suppliers only
+-- Inactive suppliers are excluded to prevent historical data from skewing current performance
+Supplier Defect Rate % =
+CALCULATE(
+    AVERAGE(Suppliers[Defect_Rate_Pct]),
+    Suppliers[Status] = "Active"
+)
+```
+
+---
+
+### 📊 Measures Summary Table
+
+| Measure | Formula Used | Business Purpose |
+|---------|-------------|-----------------|
+| Total Order Value | `SUM` | Total revenue value of all orders |
+| Total Freight Cost | `SUM` | Total logistics spend |
+| Total Orders | `COUNTROWS` | Volume of orders placed |
+| Total Stock Value | `SUM` | Total warehouse inventory value |
+| On-Time Delivery Rate % | `CALCULATE` + `DIVIDE` + `VAR` | Delivery reliability score |
+| Average Delay Days | `CALCULATE` + `AVERAGE` | Severity of delays (delayed orders only) |
+| Average Lead Time Days | `AVERAGEX` | True end-to-end fulfillment time |
+| Order Fulfillment Rate % | `CALCULATE` + `DIVIDE` + `VAR` | % of orders successfully delivered |
+| Low Stock Items Count | `CALCULATE` + `COUNTROWS` | Inventory alert indicator |
+| Supplier Defect Rate % | `CALCULATE` + `AVERAGE` | Active supplier quality metric |
 
 ---
 
