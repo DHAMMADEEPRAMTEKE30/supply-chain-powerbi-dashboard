@@ -203,24 +203,29 @@ Total Stock Value = SUM(Inventory[Stock_Value_INR])
 
 ### 🚚 Delivery Performance Metrics
 
+
+% of shipments that arrived on or before the expected delivery date
+Uses VAR variables for cleaner, more readable logic
 ```dax
--- % of shipments that arrived on or before the expected delivery date
--- Uses VAR variables for cleaner, more readable logic
 On-Time Delivery Rate % =
 VAR OnTimeCount = CALCULATE(COUNTROWS(Shipments), Shipments[On_Time_Delivery] = "YES")
 VAR TotalShipments = COUNTROWS(Shipments)
 RETURN DIVIDE(OnTimeCount, TotalShipments, 0) * 100
+```
 
--- Average delay only for shipments that were actually late
--- Excludes on-time shipments (Delay_Days = 0) to avoid diluting the true delay figure
+Average delay only for shipments that were actually late
+Excludes on-time shipments (Delay_Days = 0) to avoid diluting the true delay figure
+```dax
 Average Delay Days =
 CALCULATE(
     AVERAGE(Shipments[Delay_Days]),
     Shipments[Delay_Days] > 0
 )
+```
 
--- True end-to-end lead time = transit time + any delay on top
--- AVERAGEX iterates row by row before averaging — more accurate than a simple AVERAGE
+True end-to-end lead time = transit time + any delay on top
+AVERAGEX iterates row by row before averaging — more accurate than a simple AVERAGE
+```dax
 Average Lead Time Days =
 AVERAGEX(
     Shipments,
@@ -232,16 +237,18 @@ AVERAGEX(
 
 ### 📦 Order & Inventory Metrics
 
+% of total orders that were successfully delivered to the customer
+Uses VAR pattern for readability and easier debugging
 ```dax
--- % of total orders that were successfully delivered to the customer
--- Uses VAR pattern for readability and easier debugging
 Order Fulfillment Rate % =
 VAR DeliveredOrders = CALCULATE(COUNTROWS(Orders), Orders[Order_Status] = "Delivered")
 VAR TotalOrders = COUNTROWS(Orders)
 RETURN DIVIDE(DeliveredOrders, TotalOrders, 0) * 100
+```
 
--- Count of product-warehouse combinations currently flagged as Low Stock
--- Useful for triggering reorder alerts
+Count of product-warehouse combinations currently flagged as Low Stock
+Useful for triggering reorder alerts
+```dax
 Low Stock Items Count =
 CALCULATE(
     COUNTROWS(Inventory),
@@ -253,9 +260,9 @@ CALCULATE(
 
 ### 🏭 Supplier Metrics
 
+Average defect rate across active suppliers only
+Inactive suppliers are excluded to prevent historical data from skewing current performance
 ```dax
--- Average defect rate across active suppliers only
--- Inactive suppliers are excluded to prevent historical data from skewing current performance
 Supplier Defect Rate % =
 CALCULATE(
     AVERAGE(Suppliers[Defect_Rate_Pct]),
